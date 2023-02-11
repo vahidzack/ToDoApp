@@ -1,0 +1,66 @@
+﻿@page "/todo"
+@using ToDoApp.Data;
+@using System.IO;
+@using System.Text.Json;
+@using Microsoft.Maui.Storage;
+
+<h3>ToDoList (@todos.Count(todo=>!todo.IsDone))</h3>
+<button @onclick="Save">Save</button>
+<button @onclick="Load">Load</button>
+
+<ul class="list-unstyled">
+
+    @foreach (var todo in todos)
+    {
+        <li>
+            <input type="checkbox" @bind="todo.IsDone" />
+            <input @bind="todo.Title" />
+        </li>
+
+    }
+
+</ul>
+
+<input placeholder="Type Somthing ToDo" @bind="newtodo" />
+<button @onclick="AddToDo">ADD</button>
+
+@code {
+    private List<ToDoItem> todos = new();
+    private string newtodo = string.Empty;
+    private void AddToDo()
+    {
+        if (!string.IsNullOrWhiteSpace(newtodo))
+        {
+            todos.Add(new ToDoItem
+                {
+                    Title = newtodo,
+                });
+
+            newtodo = string.Empty;
+
+        }
+    }
+
+    private async Task Save()
+    {
+        var data = JsonSerializer.Serialize(todos);
+        var path = Path.Combine(FileSystem.AppDataDirectory, "todo.json");
+        File.WriteAllText(path, data);
+        await App.Current.MainPage.DisplayAlert("Data Saved", $"Data has Been Saved to {path}", "Ok");
+    }
+
+    private void Load()
+    {
+        var path = Path.Combine(FileSystem.AppDataDirectory, "todo.json");
+        if (!File.Exists(path))
+        {
+            return;
+        }
+        var data = File.ReadAllText(path);
+        var Savetodos = JsonSerializer.Deserialize<List<ToDoItem>>(data);
+        todos.Clear();
+        todos.AddRange(Savetodos);
+    }
+    
+
+}
